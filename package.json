@@ -1,0 +1,22 @@
+{
+  "name": "sitelist",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Fetch LinkedIn ad campaign analytics from a user's ad accounts via the LinkedIn Marketing API.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "bin": {
+    "linkedin-analytics": "./src/cli.ts"
+  },
+  "scripts": {
+    "test": "node --test 'test/**/*.test.ts'",
+    "typecheck": "tsc --noEmit",
+    "cli": "node src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
