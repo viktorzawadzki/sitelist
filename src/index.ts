@@ -17,3 +17,11 @@ export {
   type AnalyticsRow,
 } from './campaign-analytics.ts';
 export { accountUrn, campaignUrn } from './linkedin/urns.ts';
+export {
+  classifyRecruiter,
+  findRecruiters,
+  parseConnectionsCsv,
+  type Connection,
+  type RecruiterMatch,
+  type RecruiterConfidence,
+} from './recruiters.ts';

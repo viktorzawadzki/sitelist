@@ -72,6 +72,33 @@ LinkedIn limits that this code enforces or works around:
 
 Reference: [LinkedIn Ad Analytics docs](https://learn.microsoft.com/linkedin/marketing/integrations/ads-reporting/ads-reporting).
 
+## Recruiters in your network
+
+```sh
+node src/cli.ts recruiters ~/Downloads/Connections.csv --format csv > recruiters.csv
+```
+
+This command doesn't use the API, because LinkedIn's
+[Connections API](https://learn.microsoft.com/linkedin/shared/integrations/people/connections-api)
+(`r_1st_connections`) is restricted to approved partners. The Advertising API
+scopes only expose a connection *count* (`r_1st_connections_size`). Instead it
+reads your own data export: **Settings → Data privacy → Get a copy of your
+data → Connections**. LinkedIn emails the download link, usually within about
+10 minutes.
+
+Each connection is classified from their position and company:
+
+| Confidence | Rule | Example |
+| --- | --- | --- |
+| high | The title names a recruiting role | Technical Recruiter, Talent Acquisition Partner, Sourcer, Headhunter, Rekruter, Personalberater |
+| high | A broad talent/hiring title at an agency or search firm | Talent Manager @ Michael Page Staffing |
+| medium | A broad talent/hiring title alone | Head of Talent, People Partner |
+| low | Only the employer looks like an agency | Account Director @ Hays Recruitment |
+
+The default output is `medium` and above. Pass `--min-confidence high` or
+`low` to change it. Titles of people who build recruiting software, such as
+"Software Engineer, Recruiting Platform", are excluded.
+
 ## Development
 
 ```sh

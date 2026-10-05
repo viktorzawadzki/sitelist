@@ -7,6 +7,8 @@ import {
   type TimeGranularity,
 } from './linkedin/client.ts';
 import { fetchCampaignAnalytics } from './campaign-analytics.ts';
+import { findRecruiters, parseConnectionsCsv, toCsv, type RecruiterConfidence } from './recruiters.ts';
+import { readFile } from 'node:fs/promises';
 
 const USAGE = `Usage: linkedin-analytics <command> [options]
 
@@ -18,13 +20,20 @@ Commands:
       --end YYYY-MM-DD     inclusive end date (default: today, UTC)
       --granularity G      ALL | DAILY | MONTHLY | YEARLY (default: DAILY)
       --metrics a,b,c      metrics to request (default: a standard set)
+  recruiters <Connections.csv>          Find recruiters among your connections
+      --min-confidence C   high | medium | low (default: medium)
+      --format F           json | csv (default: json)
+      Export the file from LinkedIn: Settings > Data privacy >
+      Get a copy of your data > Connections. No token needed.
 
 Environment:
-  LINKEDIN_ACCESS_TOKEN  OAuth token with r_ads and r_ads_reporting scopes (required)
+  LINKEDIN_ACCESS_TOKEN  OAuth token with r_ads and r_ads_reporting scopes
+                         (required for accounts, campaigns, analytics)
   LINKEDIN_API_VERSION   LinkedIn-Version header, YYYYMM (optional)
 
-Output is JSON on stdout.`;
+Output is written to stdout.`;
 
+const CONFIDENCES: readonly RecruiterConfidence[] = ['high', 'medium', 'low'];
 const GRANULARITIES: readonly TimeGranularity[] = ['ALL', 'DAILY', 'MONTHLY', 'YEARLY'];
 
 function csv(value: string | undefined): string[] | undefined {
@@ -41,6 +50,8 @@ async function main(argv: string[]): Promise<number> {
       granularity: { type: 'string' },
       metrics: { type: 'string' },
       status: { type: 'string' },
+      'min-confidence': { type: 'string' },
+      format: { type: 'string' },
       help: { type: 'boolean', short: 'h' },
     },
   });
@@ -48,6 +59,19 @@ async function main(argv: string[]): Promise<number> {
   if (values.help || !command) {
     console.log(USAGE);
     return command || values.help ? 0 : 1;
+  }
+
+  if (command === 'recruiters') {
+    if (!args[0]) throw new UsageError('recruiters requires <Connections.csv>');
+    const min = (values['min-confidence'] ?? 'medium').toLowerCase() as RecruiterConfidence;
+    if (!CONFIDENCES.includes(min)) throw new UsageError(`--min-confidence must be one of ${CONFIDENCES.join(', ')}`);
+    const format = (values.format ?? 'json').toLowerCase();
+    if (format !== 'json' && format !== 'csv') throw new UsageError('--format must be json or csv');
+    const connections = parseConnectionsCsv(await readFile(args[0], 'utf8'));
+    const matches = findRecruiters(connections, min);
+    process.stdout.write(format === 'csv' ? toCsv(matches) : JSON.stringify(matches, null, 2) + '\n');
+    console.error(`${matches.length} recruiter(s) found among ${connections.length} connection(s).`);
+    return 0;
   }
 
   const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
